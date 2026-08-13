@@ -1,0 +1,7 @@
+.env
+.env.*
+.device_code
+lark-device-auth.png
+*.log
+.DS_Store
+node_modules/
