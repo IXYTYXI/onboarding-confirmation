@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>入职确认</title>
+  <style>
+    :root {
+      --confirm-start: #ffb94f;
+      --confirm-end: #e86f11;
+      --decline-start: #fff3de;
+      --decline-end: #f7d9ae;
+      --decline-text: #8a511f;
+      --text: #fffaf4;
+      --panel: rgba(255, 248, 240, 0.84);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100svh;
+      overflow: hidden;
+      background: linear-gradient(180deg, #fff6ea 0%, #ffe6cd 100%);
+      color: #4a2b12;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: url("./onion-background.png") center top / contain no-repeat;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 245, 231, 0) 0%, rgba(255, 245, 231, 0) 62%, rgba(74, 36, 10, 0.12) 100%);
+      pointer-events: none;
+    }
+
+    .page {
+      position: relative;
+      min-height: 100svh;
+      width: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .controls {
+      position: fixed;
+      left: 50%;
+      top: max(410px, calc(min(100svh, 150vw) - 154px));
+      transform: translateX(-50%);
+      width: min(92vw, 420px);
+      display: grid;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .choice-btn {
+      width: 100%;
+      height: 62px;
+      border: 0;
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+      box-shadow: 0 14px 30px rgba(84, 46, 16, 0.18);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, filter 0.18s ease;
+    }
+
+    .choice-btn:active {
+      transform: scale(0.985);
+    }
+
+    .choice-btn:disabled {
+      cursor: default;
+      opacity: 0.9;
+      filter: saturate(0.9);
+    }
+
+    .choice-btn.confirm {
+      background: linear-gradient(135deg, var(--confirm-start) 0%, var(--confirm-end) 100%);
+    }
+
+    .choice-btn.decline {
+      color: var(--decline-text);
+      background: linear-gradient(135deg, #fff8ea 0%, var(--decline-start) 38%, var(--decline-end) 100%);
+    }
+
+    .status-panel {
+      display: none;
+      padding: 14px 16px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid rgba(232, 111, 17, 0.15);
+      box-shadow: 0 14px 30px rgba(84, 46, 16, 0.14);
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .status-panel.show {
+      display: block;
+    }
+
+    .status-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #8c4e17;
+      line-height: 1.35;
+    }
+
+    .status-sub {
+      margin-top: 6px;
+      font-size: 14px;
+      color: #8b6a47;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 420px) {
+      .controls {
+        width: min(92vw, 360px);
+        gap: 10px;
+      }
+
+      .choice-btn {
+        height: 58px;
+        font-size: 17px;
+      }
+
+      .status-title {
+        font-size: 17px;
+      }
+    }
+
+    @media (max-height: 700px) {
+      .controls {
+        top: max(360px, calc(min(100svh, 150vw) - 146px));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page" aria-label="入职确认页面"></main>
+
+  <div class="controls" aria-label="入职确认操作">
+    <div class="status-panel" id="statusPanel" aria-live="polite">
+      <div class="status-title" id="statusTitle"></div>
+      <div class="status-sub" id="statusSub">如有问题可咨询对接HR</div>
+    </div>
+
+    <button class="choice-btn confirm" id="confirmBtn" type="button">确认入职</button>
+    <button class="choice-btn decline" id="declineBtn" type="button">拒绝入职</button>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const API_BASE = window.MULTIDIMENSION_ENDPOINT || "http://127.0.0.1:8787";
+      const urlParams = new URLSearchParams(window.location.search);
+      const routeData = {
+        recordId: urlParams.get("recordId") || urlParams.get("record_id") || "",
+        candidateId: urlParams.get("candidateId") || urlParams.get("candidate_id") || urlParams.get("id") || ""
+      };
+      const confirmBtn = document.getElementById("confirmBtn");
+      const declineBtn = document.getElementById("declineBtn");
+      const statusPanel = document.getElementById("statusPanel");
+      const statusTitle = document.getElementById("statusTitle");
+      const statusSub = document.getElementById("statusSub");
+      const buttons = [confirmBtn, declineBtn];
+
+      function endpoint(path) {
+        return API_BASE.endsWith("/") ? `${API_BASE.slice(0, -1)}${path}` : `${API_BASE}${path}`;
+      }
+
+      function setBusy(busy) {
+        buttons.forEach((button) => {
+          button.disabled = busy;
+        });
+      }
+
+      function hideButtons() {
+        buttons.forEach((button) => {
+          button.style.display = "none";
+        });
+      }
+
+      function showStatus(title, sub = "如有问题可咨询对接HR") {
+        statusTitle.textContent = title;
+        statusSub.textContent = sub;
+        statusPanel.classList.add("show");
+      }
+
+      function showSubmitted() {
+        hideButtons();
+        showStatus("已提交", "不可重复提交，如有问题可咨询对接HR");
+      }
+
+      async function requestJson(path, body) {
+        const response = await fetch(endpoint(path), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(body)
+        });
+
+        let data = null;
+        try {
+          data = await response.json();
+        } catch (error) {
+          data = null;
+        }
+
+        if (!response.ok) {
+          const error = new Error(data?.message || `请求失败：HTTP ${response.status}`);
+          error.data = data;
+          throw error;
+        }
+
+        return data;
+      }
+
+      async function checkSubmitted() {
+        if (!routeData.recordId && !routeData.candidateId) {
+          return;
+        }
+
+        try {
+          const data = await requestJson("/status", routeData);
+          if (data?.submitted) {
+            showSubmitted();
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function submitChoice(buttonText) {
+        return requestJson("/submit", {
+          buttonText,
+          ...routeData
+        });
+      }
+
+      async function handleChoice(button) {
+        const buttonText = button.textContent.trim();
+        setBusy(true);
+
+        try {
+          const data = await submitChoice(buttonText);
+          if (data?.alreadySubmitted) {
+            showSubmitted();
+            return;
+          }
+          showSubmitted();
+        } catch (error) {
+          console.error(error);
+          if (error?.data?.alreadySubmitted) {
+            showSubmitted();
+            return;
+          }
+          showStatus("回传失败", "请确认回传服务已启动，且链接中包含候选人的 recordId 或 candidateId");
+          setBusy(false);
+        }
+      }
+
+      confirmBtn.addEventListener("click", () => handleChoice(confirmBtn));
+      declineBtn.addEventListener("click", () => handleChoice(declineBtn));
+      checkSubmitted();
+    })();
+  </script>
+</body>
+</html>
