@@ -1,5 +1,5 @@
-# Push 到 main/master 后，在本机 Shell Runner 上 docker compose 部署
-# Runner 需带 tag: onboarding-confirmation
+# 使用本机 Shell Runner（tag: onboarding-confirmation）
+# 推送到 main 后：更新部署目录并 docker compose build/up
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"
@@ -29,6 +29,5 @@ deploy:docker:
     url: http://127.0.0.1:8787/onboarding-preview.html
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-    - if: $CI_COMMIT_BRANCH == "master"
   resource_group: onboarding-confirmation-local
   interruptible: false
