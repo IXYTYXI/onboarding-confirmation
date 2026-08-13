@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>入职确认</title>
+  <title>&#20837;&#32844;&#30830;&#35748;</title>
   <style>
     :root {
       --confirm-start: #ffb94f;
@@ -157,23 +157,31 @@
   </style>
 </head>
 <body>
-  <main class="page" aria-label="入职确认页面"></main>
+  <main class="page" aria-label="&#20837;&#32844;&#30830;&#35748;&#39029;&#38754;"></main>
 
-  <div class="controls" aria-label="入职确认操作">
+  <div class="controls" aria-label="&#20837;&#32844;&#30830;&#35748;&#25805;&#20316;">
     <div class="status-panel" id="statusPanel" aria-live="polite">
       <div class="status-title" id="statusTitle"></div>
-      <div class="status-sub" id="statusSub">如有问题可咨询对接HR</div>
+      <div class="status-sub" id="statusSub">&#22914;&#26377;&#38382;&#39064;&#21487;&#21672;&#35810;&#23545;&#25509;HR</div>
     </div>
 
-    <button class="choice-btn confirm" id="confirmBtn" type="button">确认入职</button>
-    <button class="choice-btn decline" id="declineBtn" type="button">拒绝入职</button>
+    <button class="choice-btn confirm" id="confirmBtn" type="button">&#30830;&#35748;&#20837;&#32844;</button>
+    <button class="choice-btn decline" id="declineBtn" type="button">&#25298;&#32477;&#20837;&#32844;</button>
   </div>
 
   <script>
     (() => {
       "use strict";
 
-      const API_BASE = window.MULTIDIMENSION_ENDPOINT || window.location.origin;
+      const API_BASE = window.MULTIDIMENSION_ENDPOINT || "http://127.0.0.1:8787";
+      const TEXT = {
+        confirm: "\u786e\u8ba4\u5165\u804c",
+        submitted: "\u5df2\u63d0\u4ea4",
+        duplicate: "\u4e0d\u53ef\u91cd\u590d\u63d0\u4ea4\uff0c\u5982\u6709\u95ee\u9898\u53ef\u54a8\u8be2\u5bf9\u63a5HR",
+        contactHr: "\u5982\u6709\u95ee\u9898\u53ef\u54a8\u8be2\u5bf9\u63a5HR",
+        failed: "\u56de\u4f20\u5931\u8d25",
+        failedTip: "\u8bf7\u786e\u8ba4\u56de\u4f20\u670d\u52a1\u5df2\u542f\u52a8\uff0c\u4e14\u94fe\u63a5\u4e2d\u5305\u542b\u5019\u9009\u4eba\u7684 recordId \u6216 candidateId"
+      };
       const urlParams = new URLSearchParams(window.location.search);
       const routeData = {
         recordId: urlParams.get("recordId") || urlParams.get("record_id") || "",
@@ -202,7 +210,7 @@
         });
       }
 
-      function showStatus(title, sub = "如有问题可咨询对接HR") {
+      function showStatus(title, sub = TEXT.contactHr) {
         statusTitle.textContent = title;
         statusSub.textContent = sub;
         statusPanel.classList.add("show");
@@ -210,7 +218,7 @@
 
       function showSubmitted() {
         hideButtons();
-        showStatus("已提交", "不可重复提交，如有问题可咨询对接HR");
+        showStatus(TEXT.submitted, TEXT.duplicate);
       }
 
       async function requestJson(path, body) {
@@ -230,7 +238,7 @@
         }
 
         if (!response.ok) {
-          const error = new Error(data?.message || `请求失败：HTTP ${response.status}`);
+          const error = new Error(data?.message || `HTTP ${response.status}`);
           error.data = data;
           throw error;
         }
@@ -277,7 +285,7 @@
             showSubmitted();
             return;
           }
-          showStatus("回传失败", "请确认回传服务已启动，且链接中包含候选人的 recordId 或 candidateId");
+          showStatus(TEXT.failed, TEXT.failedTip);
           setBusy(false);
         }
       }

@@ -4,7 +4,7 @@
 
 - `onboarding-preview.html`：候选人打开的入职确认页面。
 - `onion-background.png`：页面背景图。
-- `local-bridge.mjs`：本地测试用回传服务，负责把点击结果写回飞书多维表格。
+- `local-bridge.mjs`：本地测试用回传服务，负责把点击结果写回飞书多维表格，并在异常时发送飞书消息提醒。
 
 ## 当前回传逻辑
 
@@ -17,6 +17,38 @@
 - 如果已有记录，不再写入，返回不可重复提交。
 - 如果没有记录，则把按钮文字写入多维表格的 `回传信息` 字段。
 - 提交完成后，页面显示：`已提交`、`不可重复提交，如有问题可咨询对接HR`。
+
+## 飞书异常提醒
+
+`local-bridge.mjs` 已加入异常提醒。服务运行中如果出现请求异常，会通过飞书私聊发送提醒。
+
+默认收件人：
+
+```text
+ou_7101a2af89955673362022fa3f60c8be
+```
+
+这是当前本机 `lark-cli` 登录用户。可通过环境变量修改：
+
+```powershell
+$env:ALERT_USER_ID="ou_xxx"
+node .\local-bridge.mjs
+```
+
+关闭异常提醒：
+
+```powershell
+$env:ALERT_ENABLED="0"
+node .\local-bridge.mjs
+```
+
+会触发提醒的异常包括：
+
+- `recordId` 或 `candidateId` 无法定位记录。
+- 读取多维表格记录失败。
+- 写入多维表格失败。
+- 请求体 JSON 格式异常。
+- 服务运行中的未捕获异常。
 
 ## 本地测试步骤
 
