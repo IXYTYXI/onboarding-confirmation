@@ -173,7 +173,7 @@
     (() => {
       "use strict";
 
-      const API_BASE = window.MULTIDIMENSION_ENDPOINT || "http://127.0.0.1:8787";
+      const API_BASE = window.MULTIDIMENSION_ENDPOINT || window.location.origin;
       const urlParams = new URLSearchParams(window.location.search);
       const routeData = {
         recordId: urlParams.get("recordId") || urlParams.get("record_id") || "",
