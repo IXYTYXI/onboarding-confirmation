@@ -4,9 +4,18 @@
 
 ## 流程
 
-推送到 `main` → GitLab Pipeline → 本机 Shell Runner（tag: `onboarding-confirmation`）→ `deploy/ci-deploy.sh` → `rsync` 到 `/data/program/onboarding-confirmation` → `docker compose build && up -d` → 检查 `/healthz`。
+推送到 `main` / `master` → GitLab Pipeline → 本机 Shell Runner（tag: `onboarding-confirmation`）→ `deploy/ci-deploy.sh` → 更新代码 → `docker compose build && up -d` → 检查 `/healthz`。
 
 飞书 CLI 登录态在 Docker volume `lark-cli-data` 中，部署脚本**不会**删除该 volume。
+
+### 本机兜底（Runner 未就绪时）
+
+本机已安装用户级 systemd timer `onboarding-auto-deploy.timer`：每分钟 `git fetch`，发现 `origin/main` 有新提交则自动 build/up。
+
+```bash
+systemctl --user status onboarding-auto-deploy.timer
+bash deploy/auto-pull-deploy.sh   # 也可手动执行
+```
 
 ## 一次性准备
 
@@ -30,37 +39,20 @@ git push -u origin main
 
 把 `<你的 GitLab 仓库 SSH 或 HTTPS URL>` 换成真实地址后再执行。
 
-### 3. 注册 / 启用 Shell Runner
+### 3. 注册 / 启用 Shell Runner（正式走 GitLab CI）
 
-本机已有 `gitlab-runner`（`/home/master/bin/gitlab-runner`）。
+在项目 **Settings → CI/CD → Runners** 中创建 Project Runner：
 
-在项目 **Settings → CI/CD → Runners** 中：
-
-1. 新建 Project Runner（或启用可跑本项目的 Runner）
-2. 打上 tag：`onboarding-confirmation`（须与 [`.gitlab-ci.yml`](../.gitlab-ci.yml) 一致）
-3. executor 选 **shell**
-4. 确认 Runner 状态为 online
-
-注册示例（把 token 换成 GitLab 页面显示的 registration token / authentication token）：
+1. Tags 填：`onboarding-confirmation`（须与 `.gitlab-ci.yml` 一致）
+2. 复制 token，在本机执行：
 
 ```bash
-/home/master/bin/gitlab-runner register \
-  --url https://gitlab.yc345.tv/ \
-  --token <RUNNER_TOKEN> \
-  --executor shell \
-  --shell bash \
-  --tag-list onboarding-confirmation \
-  --description futurebuilder-onboarding-confirmation \
-  --builds-dir /home/master/builds \
-  --cache-dir /home/master/.gitlab-runner/cache
+bash deploy/register-runner.sh <RUNNER_TOKEN>
 ```
 
-注册后如服务未跑：
+确认 `/home/master/bin/gitlab-runner` 进程在跑后，再 push 到 `main` 即可看到 Pipeline 自动部署。
 
-```bash
-/home/master/bin/gitlab-runner run
-# 或按你们现有方式用 systemd / nohup 常驻
-```
+> 若暂时还没注册 Runner，本机 `onboarding-auto-deploy.timer` 仍会每分钟拉取并部署，push 后约 1 分钟生效。
 
 ### 4. 验证
 

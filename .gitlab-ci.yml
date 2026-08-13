@@ -1,5 +1,11 @@
-# 使用本机 Shell Runner（tag: onboarding-confirmation）
-# 推送到 main 后：同步到 /data/program/onboarding-confirmation 并 docker compose build/up
+# Push 到 main/master 后，在本机 Shell Runner 上 docker compose 部署
+# Runner 需带 tag: onboarding-confirmation
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_PIPELINE_SOURCE == "api"
+
 stages:
   - deploy
 
@@ -10,8 +16,10 @@ default:
 variables:
   DEPLOY_DIR: /data/program/onboarding-confirmation
   HEALTHCHECK_URL: http://127.0.0.1:8787/healthz
+  GIT_STRATEGY: fetch
+  GIT_DEPTH: "20"
 
-deploy:local-docker:
+deploy:docker:
   stage: deploy
   script:
     - chmod +x deploy/ci-deploy.sh
@@ -21,4 +29,6 @@ deploy:local-docker:
     url: http://127.0.0.1:8787/onboarding-preview.html
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "master"
   resource_group: onboarding-confirmation-local
+  interruptible: false
