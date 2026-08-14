@@ -43,6 +43,20 @@ cd /data/program/onboarding-confirmation
 bash deploy/ci-deploy.sh
 ```
 
+
+## 环境变量
+
+仓库根目录提供 `.env.example`。部署机建议：
+
+```bash
+cd /data/program/onboarding-confirmation
+cp -n .env.example .env   # 仅首次；已有 .env 不要覆盖
+# 编辑 .env 后：
+bash deploy/ci-deploy.sh
+```
+
+`ci-deploy.sh` 已排除 `.env` / `.env.*`，CI 更新代码时不会清掉部署机上的本地配置。
+
 ## 安全
 
 - 不要把 App Secret、`.env`、device code、二维码 PNG 提交进仓库

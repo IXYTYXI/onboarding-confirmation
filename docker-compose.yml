@@ -4,9 +4,10 @@ services:
     image: onboarding-confirmation:local
     container_name: onboarding-confirmation
     ports:
-      - "8787:8787"
+      - "${PORT:-8787}:8787"
     environment:
-      HOST: "0.0.0.0"
+      # 容器内必须监听 0.0.0.0，否则宿主机端口映射打不通
+      HOST: "${HOST:-0.0.0.0}"
       PORT: "8787"
       # 0=真实写入多维表格；1=只演练不落库
       DRY_RUN: "${DRY_RUN:-0}"
@@ -14,6 +15,11 @@ services:
       TABLE_ID: "${TABLE_ID:-tblVjMV66M1JDAF3}"
       FIELD_ID: "${FIELD_ID:-fldsUS8hLE}"
       LOOKUP_FIELDS: "${LOOKUP_FIELDS:-记录 ID,投递ID,ID}"
+      ALERT_ENABLED: "${ALERT_ENABLED:-1}"
+      ALERT_USER_ID: "${ALERT_USER_ID:-ou_7101a2af89955673362022fa3f60c8be}"
+      # 可选：覆盖 CLI 路径（容器镜像已安装 lark-cli 时通常不需要）
+      LARK_CLI_BIN: "${LARK_CLI_BIN:-}"
+      LARK_CLI_SCRIPT: "${LARK_CLI_SCRIPT:-}"
       # 若 CLI 配置目录不是默认路径，可通过挂载覆盖
       HOME: /home/app
     volumes:

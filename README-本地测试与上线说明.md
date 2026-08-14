@@ -6,6 +6,57 @@
 - `onion-background.png`：页面背景图。
 - `local-bridge.mjs`：本地测试用回传服务，负责把点击结果写回飞书多维表格，并在异常时发送飞书消息提醒。
 
+## 环境变量（协作必读）
+
+其他人改完代码后要能直接部署，请先配置环境变量，**不要改坏容器部署所需项**。
+
+### 推荐做法
+
+```bash
+cp .env.example .env
+# 按需编辑 .env，然后：
+docker compose up -d --build
+# 或本地直接跑：
+# set -a; source .env; set +a; node local-bridge.mjs
+```
+
+- `.env.example`：可提交到 GitHub/GitLab，给全员看默认值与说明
+- `.env`：本机/部署机私有配置，已被 `.gitignore`，**不要提交**
+- 部署脚本会保留部署目录里已有的 `.env`，不会被 `git clean` / `rsync` 清掉
+
+### 必看变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `HOST` | `0.0.0.0` | 容器内必须是 `0.0.0.0`；写死 `127.0.0.1` 会导致健康检查/端口映射失败 |
+| `PORT` | `8787` | 服务端口；`Dockerfile` 的 HEALTHCHECK 也依赖它 |
+| `DRY_RUN` | `0` | `1`=干跑不写表；正式环境用 `0` |
+| `BASE_TOKEN` | 见 `.env.example` | 多维表格 base token |
+| `TABLE_ID` | 见 `.env.example` | 多维表格 table id |
+| `FIELD_ID` | 见 `.env.example` | 「回传信息」字段 id |
+| `LOOKUP_FIELDS` | `记录 ID,投递ID,ID` | 业务 ID 查找字段顺序 |
+| `ALERT_ENABLED` | `1` | `0` 关闭飞书异常提醒 |
+| `ALERT_USER_ID` | 见 `.env.example` | 异常提醒收件人 open_id |
+
+可选：`STATIC_ROOT`、`LARK_CLI_BIN`、`LARK_CLI_SCRIPT`（容器镜像已装 `lark-cli` 时一般不用设）。
+
+### 本地 PowerShell 临时设置
+
+```powershell
+Copy-Item .env.example .env
+# 或临时：
+$env:HOST="0.0.0.0"
+$env:PORT="8787"
+$env:DRY_RUN="1"
+node .\local-bridge.mjs
+```
+
+### 合并/提交代码时注意
+
+- **业务逻辑**（ID 兼容、提交校验等）可以改
+- **部署能力**不要删：`/healthz`、`HOST` 绑定、静态页服务、`Dockerfile` / `.gitlab-ci.yml` / `deploy/`
+- 推送到 GitLab `main` 会触发自动 Docker 部署；GitHub 同步不影响线上
+
 ## 当前回传逻辑
 
 页面只允许提交一次。
