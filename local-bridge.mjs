@@ -296,12 +296,44 @@ async function readJsonRequest(req) {
   const raw = await readBody(req);
   const parsed = raw ? JSON.parse(raw) : {};
 
+  function firstString(keys) {
+    for (const key of keys) {
+      const value = parsed[key];
+      if (value !== undefined && value !== null && String(value).trim()) {
+        return String(value).trim();
+      }
+    }
+    return "";
+  }
+
   return {
-    buttonText: String(parsed.buttonText || "").trim(),
-    recordId: String(parsed.recordId || parsed.record_id || "").trim(),
-    candidateId: String(
-      parsed.candidateId || parsed.candidate_id || parsed.id || ""
-    ).trim()
+    buttonText: firstString(["buttonText", "button_text"]),
+    recordId: firstString([
+      "recordId",
+      "record_id",
+      "recordID",
+      "RecordId",
+      "RecordID",
+      "record",
+      "Record",
+      "rec",
+      "REC",
+      "记录ID",
+      "记录 ID"
+    ]),
+    candidateId: firstString([
+      "candidateId",
+      "candidate_id",
+      "candidateID",
+      "CandidateId",
+      "CandidateID",
+      "id",
+      "ID",
+      "Id",
+      "投递ID",
+      "候选人ID",
+      "候选人 ID"
+    ])
   };
 }
 
