@@ -141,14 +141,6 @@ const API_BASE = "https://你的域名/api";
 ?candidateId=业务ID
 ```
 
-也兼容这些写法：
-
-```text
-?ID=业务ID
-?id=业务ID
-?投递ID=业务ID
-```
-
 使用业务 ID 时，服务会按 `记录 ID`、`投递ID`、`ID` 依次搜索匹配记录。
 
 ## 注意事项

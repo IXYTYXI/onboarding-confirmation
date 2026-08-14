@@ -183,43 +183,9 @@
         failedTip: "\u8bf7\u786e\u8ba4\u56de\u4f20\u670d\u52a1\u5df2\u542f\u52a8\uff0c\u4e14\u94fe\u63a5\u4e2d\u5305\u542b\u5019\u9009\u4eba\u7684 recordId \u6216 candidateId"
       };
       const urlParams = new URLSearchParams(window.location.search);
-      function getSearchParam(keys) {
-        for (const key of keys) {
-          const value = urlParams.get(key);
-          if (value && value.trim()) {
-            return value.trim();
-          }
-        }
-        return "";
-      }
-
       const routeData = {
-        recordId: getSearchParam([
-          "recordId",
-          "record_id",
-          "recordID",
-          "RecordId",
-          "RecordID",
-          "record",
-          "Record",
-          "rec",
-          "REC",
-          "\u8bb0\u5f55ID",
-          "\u8bb0\u5f55 ID"
-        ]),
-        candidateId: getSearchParam([
-          "candidateId",
-          "candidate_id",
-          "candidateID",
-          "CandidateId",
-          "CandidateID",
-          "id",
-          "ID",
-          "Id",
-          "\u6295\u9012ID",
-          "\u5019\u9009\u4ebaID",
-          "\u5019\u9009\u4eba ID"
-        ])
+        recordId: urlParams.get("recordId") || urlParams.get("record_id") || "",
+        candidateId: urlParams.get("candidateId") || urlParams.get("candidate_id") || urlParams.get("id") || ""
       };
       const confirmBtn = document.getElementById("confirmBtn");
       const declineBtn = document.getElementById("declineBtn");
