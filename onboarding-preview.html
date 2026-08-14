@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>&#20837;&#32844;&#30830;&#35748;</title>
+  <style>
+    :root {
+      --confirm-start: #ffb94f;
+      --confirm-end: #e86f11;
+      --decline-start: #fff3de;
+      --decline-end: #f7d9ae;
+      --decline-text: #8a511f;
+      --text: #fffaf4;
+      --panel: rgba(255, 248, 240, 0.84);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100svh;
+      overflow: hidden;
+      background: linear-gradient(180deg, #fff6ea 0%, #ffe6cd 100%);
+      color: #4a2b12;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: url("./onion-background.png") center top / contain no-repeat;
+    }
+
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 245, 231, 0) 0%, rgba(255, 245, 231, 0) 62%, rgba(74, 36, 10, 0.12) 100%);
+      pointer-events: none;
+    }
+
+    .page {
+      position: relative;
+      min-height: 100svh;
+      width: 100%;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .controls {
+      position: fixed;
+      left: 50%;
+      top: max(410px, calc(min(100svh, 150vw) - 154px));
+      transform: translateX(-50%);
+      width: min(92vw, 420px);
+      display: grid;
+      gap: 12px;
+      z-index: 2;
+    }
+
+    .choice-btn {
+      width: 100%;
+      height: 62px;
+      border: 0;
+      border-radius: 999px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+      cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
+      box-shadow: 0 14px 30px rgba(84, 46, 16, 0.18);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease, filter 0.18s ease;
+    }
+
+    .choice-btn:active {
+      transform: scale(0.985);
+    }
+
+    .choice-btn:disabled {
+      cursor: default;
+      opacity: 0.9;
+      filter: saturate(0.9);
+    }
+
+    .choice-btn.confirm {
+      background: linear-gradient(135deg, var(--confirm-start) 0%, var(--confirm-end) 100%);
+    }
+
+    .choice-btn.decline {
+      color: var(--decline-text);
+      background: linear-gradient(135deg, #fff8ea 0%, var(--decline-start) 38%, var(--decline-end) 100%);
+    }
+
+    .status-panel {
+      display: none;
+      padding: 14px 16px;
+      border-radius: 22px;
+      background: var(--panel);
+      border: 1px solid rgba(232, 111, 17, 0.15);
+      box-shadow: 0 14px 30px rgba(84, 46, 16, 0.14);
+      text-align: center;
+      backdrop-filter: blur(8px);
+    }
+
+    .status-panel.show {
+      display: block;
+    }
+
+    .status-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #8c4e17;
+      line-height: 1.35;
+    }
+
+    .status-sub {
+      margin-top: 6px;
+      font-size: 14px;
+      color: #8b6a47;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 420px) {
+      .controls {
+        width: min(92vw, 360px);
+        gap: 10px;
+      }
+
+      .choice-btn {
+        height: 58px;
+        font-size: 17px;
+      }
+
+      .status-title {
+        font-size: 17px;
+      }
+    }
+
+    @media (max-height: 700px) {
+      .controls {
+        top: max(360px, calc(min(100svh, 150vw) - 146px));
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page" aria-label="&#20837;&#32844;&#30830;&#35748;&#39029;&#38754;"></main>
+
+  <div class="controls" aria-label="&#20837;&#32844;&#30830;&#35748;&#25805;&#20316;">
+    <div class="status-panel" id="statusPanel" aria-live="polite">
+      <div class="status-title" id="statusTitle"></div>
+      <div class="status-sub" id="statusSub">&#22914;&#26377;&#38382;&#39064;&#21487;&#21672;&#35810;&#23545;&#25509;HR</div>
+    </div>
+
+    <button class="choice-btn confirm" id="confirmBtn" type="button">&#30830;&#35748;&#20837;&#32844;</button>
+    <button class="choice-btn decline" id="declineBtn" type="button">&#25298;&#32477;&#20837;&#32844;</button>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const API_BASE = window.MULTIDIMENSION_ENDPOINT || "http://127.0.0.1:8787";
+      const TEXT = {
+        confirm: "\u786e\u8ba4\u5165\u804c",
+        submitted: "\u5df2\u63d0\u4ea4",
+        duplicate: "\u4e0d\u53ef\u91cd\u590d\u63d0\u4ea4\uff0c\u5982\u6709\u95ee\u9898\u53ef\u54a8\u8be2\u5bf9\u63a5HR",
+        contactHr: "\u5982\u6709\u95ee\u9898\u53ef\u54a8\u8be2\u5bf9\u63a5HR",
+        failed: "\u56de\u4f20\u5931\u8d25",
+        failedTip: "\u8bf7\u786e\u8ba4\u56de\u4f20\u670d\u52a1\u5df2\u542f\u52a8\uff0c\u4e14\u94fe\u63a5\u4e2d\u5305\u542b\u5019\u9009\u4eba\u7684 recordId \u6216 candidateId"
+      };
+      const urlParams = new URLSearchParams(window.location.search);
+      function getSearchParam(keys) {
+        for (const key of keys) {
+          const value = urlParams.get(key);
+          if (value && value.trim()) {
+            return value.trim();
+          }
+        }
+        return "";
+      }
+
+      const routeData = {
+        recordId: getSearchParam([
+          "recordId",
+          "record_id",
+          "recordID",
+          "RecordId",
+          "RecordID",
+          "record",
+          "Record",
+          "rec",
+          "REC",
+          "\u8bb0\u5f55ID",
+          "\u8bb0\u5f55 ID"
+        ]),
+        candidateId: getSearchParam([
+          "candidateId",
+          "candidate_id",
+          "candidateID",
+          "CandidateId",
+          "CandidateID",
+          "id",
+          "ID",
+          "Id",
+          "\u6295\u9012ID",
+          "\u5019\u9009\u4ebaID",
+          "\u5019\u9009\u4eba ID"
+        ])
+      };
+      const confirmBtn = document.getElementById("confirmBtn");
+      const declineBtn = document.getElementById("declineBtn");
+      const statusPanel = document.getElementById("statusPanel");
+      const statusTitle = document.getElementById("statusTitle");
+      const statusSub = document.getElementById("statusSub");
+      const buttons = [confirmBtn, declineBtn];
+
+      function endpoint(path) {
+        return API_BASE.endsWith("/") ? `${API_BASE.slice(0, -1)}${path}` : `${API_BASE}${path}`;
+      }
+
+      function setBusy(busy) {
+        buttons.forEach((button) => {
+          button.disabled = busy;
+        });
+      }
+
+      function hideButtons() {
+        buttons.forEach((button) => {
+          button.style.display = "none";
+        });
+      }
+
+      function showStatus(title, sub = TEXT.contactHr) {
+        statusTitle.textContent = title;
+        statusSub.textContent = sub;
+        statusPanel.classList.add("show");
+      }
+
+      function showSubmitted() {
+        hideButtons();
+        showStatus(TEXT.submitted, TEXT.duplicate);
+      }
+
+      async function requestJson(path, body) {
+        const response = await fetch(endpoint(path), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(body)
+        });
+
+        let data = null;
+        try {
+          data = await response.json();
+        } catch (error) {
+          data = null;
+        }
+
+        if (!response.ok) {
+          const error = new Error(data?.message || `HTTP ${response.status}`);
+          error.data = data;
+          throw error;
+        }
+
+        return data;
+      }
+
+      async function checkSubmitted() {
+        if (!routeData.recordId && !routeData.candidateId) {
+          return;
+        }
+
+        try {
+          const data = await requestJson("/status", routeData);
+          if (data?.submitted) {
+            showSubmitted();
+          }
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function submitChoice(buttonText) {
+        return requestJson("/submit", {
+          buttonText,
+          ...routeData
+        });
+      }
+
+      async function handleChoice(button) {
+        const buttonText = button.textContent.trim();
+        setBusy(true);
+
+        try {
+          const data = await submitChoice(buttonText);
+          if (data?.alreadySubmitted) {
+            showSubmitted();
+            return;
+          }
+          showSubmitted();
+        } catch (error) {
+          console.error(error);
+          if (error?.data?.alreadySubmitted) {
+            showSubmitted();
+            return;
+          }
+          showStatus(TEXT.failed, TEXT.failedTip);
+          setBusy(false);
+        }
+      }
+
+      confirmBtn.addEventListener("click", () => handleChoice(confirmBtn));
+      declineBtn.addEventListener("click", () => handleChoice(declineBtn));
+      checkSubmitted();
+    })();
+  </script>
+</body>
+</html>
